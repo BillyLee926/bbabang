@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>빠방 8월 활동그룹</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>빠방 8월 활동그룹</h1>
+        <div class="banner">추천 방탈출 목록 배너 예정</div>
+    </header>
+    
+    <main>
+        <div class="kanban-board-container">
+            <div class="add-board" onclick="addBoard()">+</div>
+        </div>
+    </main>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <label>테마: <input type="text" id="modal-theme" placeholder="예) 엔제리오"></label>
+            <label>장소: <input type="text" id="modal-place" placeholder="예) 강남/키이스케이프 더오름"></label>
+            <label>예상 일정: <input type="date" id="modal-date" value="${new Date().toISOString().split('T')[0]}"></label>
+            <label>신청가능인원:
+                <select id="modal-people">
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4" selected>4 (기본)</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                </select>
+            </label>
+            <div class="members-container">
+                <label>그룹원 목록:</label>
+                <div id="modal-members-list"></div>
+                <button id="add-member-btn" onclick="addModalMember()">+</button>
+            </div>
+            <button onclick="saveBoard()">저장</button>
+        </div>
+    </div>
+
+    <script src="scripts.js"></script>
+</body>
+</html>
