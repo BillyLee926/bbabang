@@ -263,6 +263,7 @@ header {
 .kanban-board.special-board .theme-display {
     font-weight: bold;
     color: orange;
+    text-align: center;
 }
 
 .banner-popup {

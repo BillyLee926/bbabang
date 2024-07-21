@@ -66,11 +66,15 @@
     <div id="banner-modal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeBannerModal()">&times;</span>
-            <label>배너 이미지 추가: <input type="file" id="banner-image" accept="image/*"></label>
+            <label>배너 이미지 추가: <input type="file" id="banner-image" accept="image/*" multiple></label>
             <button onclick="addBannerImage()">추가</button>
             <div id="banner-images"></div>
         </div>
     </div>
+    
+    <div id="banner-popup" class="banner-popup" style="display: none;">
+        <img id="banner-popup-image" src="" alt="Banner Image">
+    </div>    
 
     <script src="scripts.js"></script>
 </body>
