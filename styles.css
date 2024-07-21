@@ -190,6 +190,30 @@ header {
     border-radius: 5px;
 }
 
+.photos-container .photo-item {
+    position: relative;
+    display: inline-block;
+    margin: 5px;
+}
+
+.photos-container .photo-item img {
+    max-width: 100px;
+    max-height: 100px;
+}
+
+.photos-container .remove-photo {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #f00;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+}
+
 .kanban-board .theme-display {
     text-align: center;
     font-weight: bold;

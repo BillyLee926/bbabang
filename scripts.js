@@ -60,8 +60,7 @@ function openModal(board) {
     document.getElementById('modal-theme').disabled = isSpecial;
     
     if (!isSpecial) {
-        document.getElementById('modal-place').value = board.querySelector('.place-display').innerText.replace('장소: ', '') || '';
-        document.getElementById('modal-place').placeholder = "예) 강남/키이스케이프 더오름";
+        document.getElementById('modal-place-input').value = board.querySelector('.place-display').innerText.replace('장소: ', '') || '';
         document.getElementById('modal-place').style.display = 'block';
         document.getElementById('modal-date-label').style.display = 'block';
         document.getElementById('modal-people-label').style.display = 'block';
@@ -83,6 +82,20 @@ function openModal(board) {
             <button class="remove-member" onclick="removeModalMember(this)">X</button>
         `;
         document.getElementById('modal-members-list').appendChild(memberInput);
+    }
+
+    const photosList = board.querySelector('.photos-list');
+    document.getElementById('modal-photos-list').innerHTML = '';
+    if (photosList) {
+        for (const photo of photosList.children) {
+            const photoItem = document.createElement('div');
+            photoItem.className = 'photo-item';
+            photoItem.innerHTML = `
+                <img src="${photo.src}" alt="photo">
+                <button class="remove-photo" onclick="removeModalPhoto(this)">X</button>
+            `;
+            document.getElementById('modal-photos-list').appendChild(photoItem);
+        }
     }
     
     document.getElementById('modal').style.display = "block";
@@ -119,10 +132,11 @@ function saveBoard() {
     const isSpecial = currentBoard.classList.contains('special-board');
     
     const theme = isSpecial ? '랜덤 그룹' : document.getElementById('modal-theme').value;
-    const place = isSpecial ? '' : document.getElementById('modal-place').value;
+    const place = isSpecial ? '' : document.getElementById('modal-place-input').value;
     const date = isSpecial ? '' : document.getElementById('modal-date').value;
     const people = isSpecial ? '무제한' : document.getElementById('modal-people').value;
     const membersList = document.getElementById('modal-members-list');
+    const photosList = document.getElementById('modal-photos-list');
 
     currentBoard.querySelector('.theme-display').innerText = theme;
     if (!isSpecial) {
@@ -141,10 +155,51 @@ function saveBoard() {
         membersDisplayList.appendChild(memberDisplay);
     }
 
+    let photosDisplayList = currentBoard.querySelector('.photos-list');
+    if (!photosDisplayList) {
+        photosDisplayList = document.createElement('div');
+        photosDisplayList.className = 'photos-list';
+        photosDisplayList.style.display = 'none';  // 메인 화면에서는 숨김
+        currentBoard.querySelector('.board-content').appendChild(photosDisplayList);
+    }
+    photosDisplayList.innerHTML = '';
+    const photoUrls = [];
+    for (const photoItem of photosList.children) {
+        const photoDisplay = document.createElement('img');
+        const src = photoItem.querySelector('img').src;
+        photoDisplay.src = src;
+        photosDisplayList.appendChild(photoDisplay);
+        photoUrls.push(src);  // Save each photo URL to an array
+    }
+
     updateBoardStyle(currentBoard);
 
-    saveBoards();
+    // 현재 보드 데이터를 업데이트
+    const boards = JSON.parse(localStorage.getItem('kanbanBoards')) || [];
+    const boardData = {
+        theme,
+        place,
+        date,
+        people,
+        members: Array.from(membersList.children).map(member => member.querySelector('input').value),
+        photos: photoUrls,  // Include photo URLs
+        isSpecial
+    };
+    const boardIndex = Array.from(document.querySelectorAll('.kanban-board')).indexOf(currentBoard);
+    if (boardIndex >= 0) {
+        boards[boardIndex] = boardData;
+    } else {
+        boards.push(boardData);
+    }
 
+    try {
+        localStorage.setItem('kanbanBoards', JSON.stringify(boards));
+        console.log('Board saved:', boardData);
+    } catch (e) {
+        console.error('Error saving to localStorage:', e);
+    }
+
+    // 모달 창 닫기
     closeModal();
 }
 
@@ -200,7 +255,7 @@ function addModalMember() {
         const memberInput = document.createElement('div');
         memberInput.className = 'member-input';
         memberInput.innerHTML = `
-            <input type="text" placeholder="예) 이혁주/DevOps팀">
+            <input type="text" placeholder="그룹원 이름">
             <button class="remove-member" onclick="removeModalMember(this)">X</button>
         `;
         membersList.appendChild(memberInput);
@@ -213,20 +268,49 @@ function removeModalMember(button) {
     button.parentElement.remove();
 }
 
+function removeModalPhoto(button) {
+    button.parentElement.remove();
+}
+
+document.getElementById('modal-photo-input').addEventListener('change', function(event) {
+    const files = event.target.files;
+    const photosList = document.getElementById('modal-photos-list');
+
+    for (const file of files) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const photoItem = document.createElement('div');
+            photoItem.className = 'photo-item';
+            photoItem.innerHTML = `
+                <img src="${e.target.result}" alt="photo">
+                <button class="remove-photo" onclick="removeModalPhoto(this)">X</button>
+            `;
+            photosList.appendChild(photoItem);
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
 function saveBoards() {
     const boards = [];
     document.querySelectorAll('.kanban-board').forEach(board => {
         const isSpecial = board.classList.contains('special-board');
         const theme = board.querySelector('.theme-display').innerText;
         const place = board.querySelector('.place-display') ? board.querySelector('.place-display').innerText.replace('장소: ', '') : '';
-        const date = isSpecial ? '' : board.querySelector('.date-display').innerText.replace('예상 일정: ', '');
-        const people = isSpecial ? '무제한' : board.querySelector('.people-display').dataset.value;
+        const date = board.querySelector('.date-display') ? board.querySelector('.date-display').innerText.replace('예상 일정: ', '') : '';
+        const people = board.querySelector('.people-display') ? board.querySelector('.people-display').dataset.value : '';
         const members = Array.from(board.querySelectorAll('.members-list .member-display')).map(member => member.innerText);
+        const photos = Array.from(board.querySelectorAll('.photos-list img')).map(photo => photo.src);
 
-        boards.push({ theme, place, date, people, members, isSpecial });
+        boards.push({ theme, place, date, people, members, photos, isSpecial });
     });
 
-    localStorage.setItem('kanbanBoards', JSON.stringify(boards));
+    try {
+        localStorage.setItem('kanbanBoards', JSON.stringify(boards));
+        console.log('Boards saved:', boards);
+    } catch (e) {
+        console.error('Error saving to localStorage:', e);
+    }
 }
 
 function loadBoards() {
@@ -238,16 +322,19 @@ function loadBoards() {
         newBoard.className = `kanban-board${boardData.isSpecial ? ' special-board' : ''}`;
         newBoard.onclick = boardData.isSpecial ? () => openSpecialBoardModal(newBoard) : () => openModal(newBoard);
         newBoard.innerHTML = `
-            <button class="delete-board" onclick="event.stopPropagation(); deleteBoard(this)" style="display: ${boardData.isSpecial ? 'none' : 'none'};">X</button>
+            <button class="delete-board" onclick="event.stopPropagation(); deleteBoard(this)" style="display: none;">X</button>
             <div class="board-content">
-                <div class="board-placeholder" style="display: ${boardData.isSpecial ? 'none' : 'flex'};">클릭하여 내용을 추가하세요</div>
+                <div class="board-placeholder" style="display: none;">클릭하여 내용을 추가하세요</div>
                 <div class="theme-display">${boardData.theme}</div>
-                <div class="place-display" style="display: ${boardData.isSpecial ? 'none' : 'block'};">장소: ${boardData.place}</div>
-                <div class="date-display" style="display: ${boardData.isSpecial ? 'none' : 'block'};">예상 일정: ${boardData.date}</div>
-                <div class="people-display" data-value="${boardData.people}" style="display: ${boardData.isSpecial ? 'none' : 'block'};">신청가능인원: ${boardData.people}</div>
+                <div class="place-display" style="display: ${boardData.place ? 'block' : 'none'};">장소: ${boardData.place}</div>
+                <div class="date-display" style="display: ${boardData.date ? 'block' : 'none'};">예상 일정: ${boardData.date}</div>
+                <div class="people-display" data-value="${boardData.people}" style="display: ${boardData.people ? 'block' : 'none'};">신청가능인원: ${boardData.people}</div>
                 <ul class="members-list">
                     ${boardData.members.map(member => `<li class="member-display">${member}</li>`).join('')}
                 </ul>
+                <div class="photos-list" style="display: none;">
+                    ${boardData.photos.map(photo => `<img src="${photo}" alt="photo">`).join('')}
+                </div>
             </div>
         `;
         if (!boardData.isSpecial) {
@@ -257,6 +344,8 @@ function loadBoards() {
         container.insertBefore(newBoard, container.querySelector('.add-board'));
         updateBoardStyle(newBoard);
     });
+
+    console.log('Boards loaded:', boards);
 }
 
 function openAdminLogin() {
